@@ -2594,6 +2594,7 @@ class DataTable(ScrollView, Generic[CellType], can_focus=True):
         *columns: ColumnKey | str,
         key: Callable[[Any], Any] | None = None,
         reverse: bool = False,
+        on_current_order: bool = False,
     ) -> Self:
         """Sort the rows in the `DataTable` by one or more column keys or a
         key function (or other callable). If both columns and a key function
@@ -2604,6 +2605,9 @@ class DataTable(ScrollView, Generic[CellType], can_focus=True):
             key: A function (or other callable) that returns a key to
                 use for sorting purposes.
             reverse: If True, the sort order will be reversed.
+            on_current_order: If True, the sort is performed on the current
+                order, if False, the sort is performed on the original row
+                insertion order.
 
         Returns:
             The `DataTable` instance.
@@ -2619,8 +2623,17 @@ class DataTable(ScrollView, Generic[CellType], can_focus=True):
                 return key(result)
             return result
 
+        if on_current_order:
+            ordered_row_locations = sorted(
+                ((row_key, self._row_locations.get(row_key)) for row_key in self._row_locations),
+                key=itemgetter(1)
+            )
+            sort_data = [(row_key, self._data[row_key]) for (row_key, _) in ordered_row_locations]
+        else:
+            sort_data = self._data.items()
+
         ordered_rows = sorted(
-            self._data.items(),
+            sort_data,
             key=key_wrapper,
             reverse=reverse,
         )
